@@ -9,7 +9,7 @@ This document provides a style guide for Zig language used by [@smallkirby](http
 
 ## Import
 
-`@import` should be gouped and sorted by the following order:
+`@import` should be grouped and sorted by the following order:
 
 1. Standard library
 2. Non-standard modules
@@ -30,6 +30,27 @@ const mymod_some = mymod.some;
 const a = @import("a.zig");
 const b = @import("b.zig");
 const c = @import("c.zig");
+```
+
+## File Structure
+
+Non-public imports should be placed at the end of the file.
+Unit tests should be placed right before these imports:
+
+```zig
+pub const S = @import("S.zig"); // Re-exported import can be at the top.
+
+fn main() !void {}
+
+// =============================================================
+// Unit Tests
+// =============================================================
+test "foo" {}
+
+// =============================================================
+// Imports
+// =============================================================
+const std = @import("std");
 ```
 
 ## Visibility
@@ -110,6 +131,18 @@ func(E.a);
 func(.a);
 ```
 
+When calling a function using **decl literals**, special attention must be paid to readability:
+
+```zig
+const S = struct {
+  fn foo() S {...}
+};
+
+fn bar(s: S) void {}
+
+bar(.foo()); // Pay attention to readability when using decl literals.
+```
+
 ## Braces
 
 Even when a block body has only one statement, you should wrap it with braces except for `break`, `continue`, or `return`.
@@ -124,6 +157,29 @@ if (cond) {
 if (cond) break;
 if (cond) continue;
 if (cond) return;
+```
+
+## Error Set and Union
+
+When directly creating an error union from an error set definition, the error set must come first:
+
+```zig
+const SomeError = error {
+    SomeError1,
+    SomeError2,
+} || FooError || BarError;;
+```
+
+## Enum
+
+Enum must be exhaustive except it's inevitable (e.g., user input):
+
+```zig
+const E = enum(u64) { a, b, c, _ };
+
+fn foo(user_input: u64) E {
+  return @enumFromInt(user_input); // Inevitable case.
+}
 ```
 
 ## Doc Comments
@@ -152,25 +208,4 @@ pub const S = struct {
   pub fn bar() void {}
   fn baz() void {} // Comment is not mandatory.
 }
-```
-
-## Testing
-
-Tests should be placed at the end of the file.
-
-```zig
-// Bad
-const testing = std.testing;
-pub fn foo() void {}
-test "foo" {}
-pub fn bar() void {}
-
-// Good
-pub fn foo() void {}
-pub fn bar() void {}
-
-// ====================================================
-
-const testing = std.testing;
-test "foo" {}
 ```
